@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScaleMate</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    background:white;
+    overflow:hidden;
+}
+
+#panel{
+    position:fixed;
+    top:0;
+    left:0;
+    right:0;
+    background:white;
+    padding:20px;
+    border-bottom:1px solid #eee;
+    z-index:100;
+}
+
+h1{
+    font-size:30px;
+    margin-bottom:15px;
+}
+
+input{
+    width:100%;
+    font-size:28px;
+    border:none;
+    border-bottom:2px solid #ddd;
+    padding:8px 0;
+    outline:none;
+}
+
+table{
+    width:100%;
+    margin-top:18px;
+    border-collapse:collapse;
+}
+
+td{
+    padding:4px 0;
+    font-size:20px;
+}
+
+td:last-child{
+    text-align:right;
+    font-weight:600;
+}
+
+canvas{
+    position:fixed;
+    left:0;
+    right:0;
+    bottom:0;
+    cursor:crosshair;
+    touch-action:none;
+}
+</style>
+
+</head>
+
+<body>
+
+<div id="panel">
+
+<h1>ScaleMate</h1>
+
+<input
+id="real"
+type="number"
+placeholder="Введіть розмір у мм"
+oninput="update()"
+>
+
+<table id="table"></table>
+
+</div>
+
+<canvas id="canvas"></canvas>
+
+<script>
+
+const scales=[20,25,35,50,75,100,200,500];
+
+function update(){
+
+    const value=parseFloat(document.getElementById("real").value);
+
+    if(isNaN(value)){
+        table.innerHTML="";
+        return;
+    }
+
+    let html="";
+
+    scales.forEach(scale=>{
+
+        let d=value/scale;
+
+        html+=`
+        <tr>
+            <td>1:${scale}</td>
+            <td>${d.toFixed(2).replace(/\.00$/,"")} мм</td>
+        </tr>
+        `;
+
+    });
+
+    table.innerHTML=html;
+
+    resizeCanvas();
+
+}
+
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
+
+function resizeCanvas(){
+
+    const panelHeight=document.getElementById("panel").offsetHeight;
+
+    canvas.style.top=panelHeight+"px";
+
+    canvas.width=window.innerWidth;
+
+    canvas.height=window.innerHeight-panelHeight;
+
+    ctx.lineWidth=2;
+    ctx.lineCap="round";
+    ctx.lineJoin="round";
+    ctx.strokeStyle="rgba(0,0,0,0.75)";
+}
+
+window.addEventListener("resize",resizeCanvas);
+
+resizeCanvas();
+
+let drawing=false;
+
+function pos(e){
+
+    const r=canvas.getBoundingClientRect();
+
+    if(e.touches){
+
+        return{
+            x:e.touches[0].clientX-r.left,
+            y:e.touches[0].clientY-r.top
+        };
+
+    }
+
+    return{
+        x:e.clientX-r.left,
+        y:e.clientY-r.top
+    };
+
+}
+
+function start(e){
+
+    drawing=true;
+
+    const p=pos(e);
+
+    ctx.beginPath();
+    ctx.moveTo(p.x,p.y);
+
+}
+
+function draw(e){
+
+    if(!drawing) return;
+
+    e.preventDefault();
+
+    const p=pos(e);
+
+    ctx.lineTo(p.x,p.y);
+    ctx.stroke();
+
+}
+
+function stop(){
+
+    drawing=false;
+
+}
+
+canvas.addEventListener("mousedown",start);
+canvas.addEventListener("mousemove",draw);
+window.addEventListener("mouseup",stop);
+
+canvas.addEventListener("touchstart",start,{passive:false});
+canvas.addEventListener("touchmove",draw,{passive:false});
+window.addEventListener("touchend",stop);
+
+canvas.addEventListener("dblclick",()=>{
+
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+});
+
+</script>
+
+</body>
+</html>
